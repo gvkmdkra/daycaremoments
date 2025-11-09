@@ -1,0 +1,63 @@
+# DaycareMoments - Python Dependencies
+# No version pinning - always use latest stable versions
+
+# Core Framework
+streamlit
+streamlit-authenticator
+
+# Database
+libsql-client
+sqlalchemy
+alembic
+
+# AI/LLM (Swappable)
+openai
+google-generativeai
+anthropic
+langchain
+langchain-openai
+langchain-google-genai
+
+# Face Recognition
+face-recognition
+opencv-python
+deepface
+dlib
+
+# Storage
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+boto3
+
+# Communication
+twilio
+resend
+
+# Payments
+stripe
+
+# Background Jobs
+APScheduler
+
+# Utilities
+python-dotenv
+requests
+Pillow
+pandas
+plotly
+numpy
+python-multipart
+pydantic
+httpx
+
+# Testing
+pytest
+pytest-cov
+pytest-asyncio
+pytest-mock
+
+# Development
+black
+flake8
+mypy
