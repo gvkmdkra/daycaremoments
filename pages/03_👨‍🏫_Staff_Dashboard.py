@@ -7,6 +7,7 @@ from app.database.models import Child, Photo, Activity, PhotoStatus, User
 from datetime import datetime, timedelta
 from sqlalchemy import desc
 import uuid
+import random
 from app.utils.ui_theme import apply_professional_theme
 
 st.set_page_config(page_title="Staff Dashboard", page_icon="👨‍🏫", layout="wide")
@@ -22,11 +23,11 @@ st.title("👨‍🏫 Staff Dashboard")
 st.write(f"Welcome, **{user.first_name}**!")
 
 # ===== TABS =====
-tab1, tab2, tab3, tab4 = st.tabs(["📸 Upload Photos", "✅ Approve Photos", "📝 Log Activity", "👶 Children"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📸 Upload Photos", "☁️ Google Drive", "✅ Approve Photos", "📝 Log Activity", "👶 Children"])
 
-# ===== TAB 1: UPLOAD PHOTOS =====
+# ===== TAB 1: MANUAL UPLOAD WITH STUDENT SELECTION =====
 with tab1:
-    st.subheader("📸 Upload Photos")
+    st.subheader("📸 Upload Photos with Student Selection")
 
     # Get children from the daycare
     with get_db() as db:
@@ -41,66 +42,202 @@ with tab1:
         st.warning("No children found in your daycare. Please add children first.")
     else:
         with st.form("upload_photos_form"):
+            # Student selection - MULTISELECT for multiple children
+            child_names = {f"{child['first_name']} {child['last_name']}": child['id'] for child in children}
+            selected_children = st.multiselect(
+                "👶 Select Children in Photos",
+                options=list(child_names.keys()),
+                help="Select one or more children who appear in these photos"
+            )
+
             # File uploader
             uploaded_files = st.file_uploader(
-                "Select Photos",
+                "📷 Select Photos",
                 type=['jpg', 'jpeg', 'png'],
-                accept_multiple_files=True
+                accept_multiple_files=True,
+                help="Upload multiple photos at once (JPEG, JPG, PNG)"
             )
 
             # Activity selector
             activity_type = st.selectbox(
-                "Activity Type",
+                "📋 Activity Type",
                 options=["Meal", "Nap", "Play", "Learning", "Outdoor", "Art", "Other"]
             )
 
             # Caption
-            caption = st.text_area("Caption (optional)", placeholder="What's happening in these photos?")
+            caption = st.text_area("💬 Caption (optional)", placeholder="What's happening in these photos?")
 
             # Auto-approve option (staff can auto-approve)
-            auto_approve = st.checkbox("Auto-approve photos", value=True)
+            auto_approve = st.checkbox("✅ Auto-approve photos", value=True)
 
             submit = st.form_submit_button("📤 Upload Photos", use_container_width=True)
 
-            if submit and uploaded_files:
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+            if submit:
+                if not selected_children:
+                    st.error("❌ Please select at least one child before uploading")
+                elif not uploaded_files:
+                    st.error("❌ Please select photos to upload")
+                else:
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    photos_uploaded = 0
 
-                for idx, uploaded_file in enumerate(uploaded_files):
-                    status_text.text(f"Processing {uploaded_file.name}...")
+                    for idx, uploaded_file in enumerate(uploaded_files):
+                        status_text.text(f"Processing {uploaded_file.name}...")
 
-                    # In production, this would upload to storage (Google Drive, R2, etc.)
-                    # For now, we'll simulate it
-                    photo_url = f"/uploads/{uuid.uuid4()}_{uploaded_file.name}"
+                        # In production, upload to Google Drive, R2, or S3
+                        # For demo, use placeholder URL
+                        photo_url = f"https://via.placeholder.com/400x300/667eea/ffffff?text={uploaded_file.name}"
 
-                    # Face recognition would happen here
-                    # For now, we'll create photos without child assignment
+                        # Create photo for each selected child
+                        with get_db() as db:
+                            for child_name in selected_children:
+                                child_id = child_names[child_name]
 
-                    with get_db() as db:
-                        photo = Photo(
-                            id=str(uuid.uuid4()),
-                            url=photo_url,
-                            child_id=None,  # Will be assigned via face recognition
-                            daycare_id=user.daycare_id,
-                            uploaded_by=user.id,
-                            caption=caption,
-                            activity_type=activity_type.lower(),
-                            status=PhotoStatus.APPROVED if auto_approve else PhotoStatus.PENDING,
-                            uploaded_at=datetime.utcnow()
-                        )
-                        db.add(photo)
-                        db.commit()
+                                photo = Photo(
+                                    id=str(uuid.uuid4()),
+                                    file_name=uploaded_file.name,
+                                    original_file_name=uploaded_file.name,
+                                    url=photo_url,
+                                    child_id=child_id,
+                                    daycare_id=user.daycare_id,
+                                    uploaded_by=user.id,
+                                    caption=caption,
+                                    captured_at=datetime.utcnow(),
+                                    status=PhotoStatus.APPROVED if auto_approve else PhotoStatus.PENDING,
+                                    approved_by=user.id if auto_approve else None
+                                )
+                                db.add(photo)
+                                photos_uploaded += 1
 
-                    progress_bar.progress((idx + 1) / len(uploaded_files))
+                            db.commit()
 
-                status_text.empty()
-                st.success(f"✅ Uploaded {len(uploaded_files)} photos successfully!")
+                        progress_bar.progress((idx + 1) / len(uploaded_files))
 
-                if not auto_approve:
-                    st.info("Photos are pending approval. Check the 'Approve Photos' tab.")
+                    status_text.empty()
+                    st.success(f"✅ Uploaded {photos_uploaded} photos successfully for {len(selected_children)} child(ren)!")
 
-# ===== TAB 2: APPROVE PHOTOS =====
+                    if not auto_approve:
+                        st.info("Photos are pending approval. Check the 'Approve Photos' tab.")
+
+# ===== TAB 2: GOOGLE DRIVE UPLOAD =====
 with tab2:
+    st.subheader("☁️ Import Photos from Google Drive")
+
+    st.info("📌 **Google Drive Integration** - Import photos directly from your Google Drive folder")
+
+    # Get children for tagging
+    with get_db() as db:
+        children_db = db.query(Child).filter(Child.daycare_id == user.daycare_id).all()
+        children = [{
+            'id': c.id,
+            'first_name': c.first_name,
+            'last_name': c.last_name
+        } for c in children_db]
+
+    if not children:
+        st.warning("No children found in your daycare. Please add children first.")
+    else:
+        with st.form("gdrive_import_form"):
+            # Google Drive folder URL input
+            gdrive_url = st.text_input(
+                "📁 Google Drive Folder URL",
+                placeholder="https://drive.google.com/drive/folders/...",
+                help="Paste the shared link to your Google Drive folder containing photos"
+            )
+
+            # Student selection for all photos in folder
+            child_names = {f"{child['first_name']} {child['last_name']}": child['id'] for child in children}
+            selected_children = st.multiselect(
+                "👶 Tag Children in These Photos",
+                options=list(child_names.keys()),
+                help="Select children who appear in the photos from this folder"
+            )
+
+            # Activity type
+            activity_type = st.selectbox(
+                "📋 Activity Type",
+                options=["Meal", "Nap", "Play", "Learning", "Outdoor", "Art", "Other"]
+            )
+
+            # Caption
+            caption = st.text_area("💬 Caption for All Photos", placeholder="Optional caption for all imported photos")
+
+            auto_approve = st.checkbox("✅ Auto-approve imported photos", value=True)
+
+            submit_gdrive = st.form_submit_button("☁️ Import from Google Drive", use_container_width=True)
+
+            if submit_gdrive:
+                if not gdrive_url:
+                    st.error("❌ Please provide a Google Drive folder URL")
+                elif not selected_children:
+                    st.error("❌ Please select at least one child to tag")
+                else:
+                    # In production, this would use Google Drive API
+                    # For demo, simulate importing 5-10 photos
+                    st.info("🔄 Connecting to Google Drive...")
+
+                    import time
+                    time.sleep(1)
+
+                    # Simulate photo import
+                    num_photos = random.randint(5, 10)
+                    st.info(f"📥 Found {num_photos} photos in folder. Importing...")
+
+                    progress_bar = st.progress(0)
+                    photos_imported = 0
+
+                    for i in range(num_photos):
+                        photo_name = f"gdrive_photo_{i+1}.jpg"
+                        photo_url = f"https://via.placeholder.com/400x300/38ef7d/ffffff?text=GDrive+Photo+{i+1}"
+
+                        with get_db() as db:
+                            for child_name in selected_children:
+                                child_id = child_names[child_name]
+
+                                photo = Photo(
+                                    id=str(uuid.uuid4()),
+                                    file_name=photo_name,
+                                    original_file_name=photo_name,
+                                    url=photo_url,
+                                    child_id=child_id,
+                                    daycare_id=user.daycare_id,
+                                    uploaded_by=user.id,
+                                    caption=f"{caption} (from Google Drive)" if caption else "Imported from Google Drive",
+                                    captured_at=datetime.utcnow(),
+                                    status=PhotoStatus.APPROVED if auto_approve else PhotoStatus.PENDING,
+                                    approved_by=user.id if auto_approve else None
+                                )
+                                db.add(photo)
+                                photos_imported += 1
+
+                            db.commit()
+
+                        progress_bar.progress((i + 1) / num_photos)
+
+                    st.success(f"✅ Successfully imported {photos_imported} photos for {len(selected_children)} child(ren)!")
+                    st.balloons()
+
+    st.divider()
+
+    # Instructions for Google Drive setup
+    with st.expander("ℹ️ How to Connect Google Drive"):
+        st.markdown("""
+        **Setup Instructions:**
+
+        1. **Create a Shared Folder** in Google Drive
+        2. **Upload Photos** to this folder
+        3. **Get Shareable Link:**
+           - Right-click folder → Share → Copy link
+           - Set permissions to "Anyone with the link can view"
+        4. **Paste Link Above** and import photos
+
+        **Note:** In production, this uses Google Drive API for secure access.
+        For demo purposes, we simulate the import process.
+        """)
+
+# ===== TAB 3: APPROVE PHOTOS =====
+with tab3:
     st.subheader("✅ Approve Photos")
 
     with get_db() as db:
@@ -153,8 +290,8 @@ with tab2:
     else:
         st.info("✅ No photos pending approval!")
 
-# ===== TAB 3: LOG ACTIVITY =====
-with tab3:
+# ===== TAB 4: LOG ACTIVITY =====
+with tab4:
     st.subheader("📝 Log Activity")
 
     # Get children
@@ -289,8 +426,8 @@ with tab3:
     else:
         st.info("No activities logged today yet.")
 
-# ===== TAB 4: CHILDREN =====
-with tab4:
+# ===== TAB 5: CHILDREN =====
+with tab5:
     st.subheader("👶 Children in Daycare")
 
     with get_db() as db:
