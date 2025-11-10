@@ -21,6 +21,62 @@ user = get_current_user()
 st.title("📞 Voice Calling Agent")
 st.write("Call us anytime to check on your child or get daycare updates!")
 
+# Helper function for generating responses (defined early for use below)
+def generate_voice_response(query: str, child, activities: list) -> str:
+    """Generate natural voice response based on query and data"""
+
+    query_lower = query.lower()
+    child_name = child.first_name
+
+    # Meals
+    if any(word in query_lower for word in ['eat', 'ate', 'meal', 'lunch', 'breakfast', 'dinner', 'snack']):
+        meals = [a for a in activities if a.activity_type == 'meal']
+        if meals:
+            meal = meals[0]
+            time_str = meal.activity_time.strftime("%I:%M %p")
+            notes = meal.notes or "a nutritious meal"
+            return f"{child_name} had a meal at {time_str}. {notes}. They seemed to enjoy it!"
+        else:
+            return f"I don't have any meal records for {child_name} today yet."
+
+    # Naps
+    elif any(word in query_lower for word in ['nap', 'sleep', 'rest']):
+        naps = [a for a in activities if a.activity_type == 'nap']
+        if naps:
+            nap = naps[0]
+            duration = nap.duration_minutes or 0
+            time_str = nap.activity_time.strftime("%I:%M %p")
+            return f"{child_name} had a nap starting at {time_str} for about {duration} minutes. They woke up well-rested!"
+        else:
+            return f"{child_name} hasn't had a nap recorded today yet."
+
+    # General activities
+    elif any(word in query_lower for word in ['do', 'did', 'activity', 'activities']):
+        if activities:
+            activity_summary = []
+            for act in activities[:3]:  # Top 3
+                activity_summary.append(f"{act.activity_type} at {act.activity_time.strftime('%I:%M %p')}")
+            activities_str = ", ".join(activity_summary)
+            return f"Today, {child_name} has done: {activities_str}. They've had a wonderful day!"
+        else:
+            return f"No activities have been logged for {child_name} today yet."
+
+    # Photos
+    elif any(word in query_lower for word in ['photo', 'picture', 'pic']):
+        return f"We have several new photos of {child_name} from today! I can send them to your email if you'd like."
+
+    # Daily summary
+    elif any(word in query_lower for word in ['summary', 'today', 'day', 'overall']):
+        meal_count = len([a for a in activities if a.activity_type == 'meal'])
+        nap_count = len([a for a in activities if a.activity_type == 'nap'])
+        total = len(activities)
+
+        return f"{child_name} has had a great day! We've logged {meal_count} meals, {nap_count} naps, and {total} total activities. They've been happy and engaged!"
+
+    # Default
+    else:
+        return f"I can help you with information about {child_name}'s day. You can ask about meals, naps, activities, or photos!"
+
 # Check if Twilio is configured
 if not all([Config.TWILIO_ACCOUNT_SID, Config.TWILIO_AUTH_TOKEN, Config.TWILIO_PHONE_NUMBER]):
     st.error("❌ Twilio is not configured. Please add Twilio credentials to your .env file")
@@ -302,62 +358,6 @@ YOU: "No, thank you!"
 
 AGENT: "You're welcome! Have a great day, and we'll see Emma tomorrow!"
     """)
-
-# Helper function for generating responses
-def generate_voice_response(query: str, child: Child, activities: list) -> str:
-    """Generate natural voice response based on query and data"""
-
-    query_lower = query.lower()
-    child_name = child.first_name
-
-    # Meals
-    if any(word in query_lower for word in ['eat', 'ate', 'meal', 'lunch', 'breakfast', 'dinner', 'snack']):
-        meals = [a for a in activities if a.activity_type == 'meal']
-        if meals:
-            meal = meals[0]
-            time_str = meal.activity_time.strftime("%I:%M %p")
-            notes = meal.notes or "a nutritious meal"
-            return f"{child_name} had a meal at {time_str}. {notes}. They seemed to enjoy it!"
-        else:
-            return f"I don't have any meal records for {child_name} today yet."
-
-    # Naps
-    elif any(word in query_lower for word in ['nap', 'sleep', 'rest']):
-        naps = [a for a in activities if a.activity_type == 'nap']
-        if naps:
-            nap = naps[0]
-            duration = nap.duration_minutes or 0
-            time_str = nap.activity_time.strftime("%I:%M %p")
-            return f"{child_name} had a nap starting at {time_str} for about {duration} minutes. They woke up well-rested!"
-        else:
-            return f"{child_name} hasn't had a nap recorded today yet."
-
-    # General activities
-    elif any(word in query_lower for word in ['do', 'did', 'activity', 'activities']):
-        if activities:
-            activity_summary = []
-            for act in activities[:3]:  # Top 3
-                activity_summary.append(f"{act.activity_type} at {act.activity_time.strftime('%I:%M %p')}")
-            activities_str = ", ".join(activity_summary)
-            return f"Today, {child_name} has done: {activities_str}. They've had a wonderful day!"
-        else:
-            return f"No activities have been logged for {child_name} today yet."
-
-    # Photos
-    elif any(word in query_lower for word in ['photo', 'picture', 'pic']):
-        return f"We have several new photos of {child_name} from today! I can send them to your email if you'd like."
-
-    # Daily summary
-    elif any(word in query_lower for word in ['summary', 'today', 'day', 'overall']):
-        meal_count = len([a for a in activities if a.activity_type == 'meal'])
-        nap_count = len([a for a in activities if a.activity_type == 'nap'])
-        total = len(activities)
-
-        return f"{child_name} has had a great day! We've logged {meal_count} meals, {nap_count} naps, and {total} total activities. They've been happy and engaged!"
-
-    # Default
-    else:
-        return f"I can help you with information about {child_name}'s day. You can ask about meals, naps, activities, or photos!"
 
 st.divider()
 

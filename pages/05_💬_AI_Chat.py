@@ -233,10 +233,12 @@ def display_photo_grid(query_lower: str):
         if not child_ids:
             return
 
-        # Get recent photos
+        # Get recent photos (approved only)
+        from app.database.models import PhotoStatus
         recent_photos = db.query(Photo).filter(
             Photo.child_id.in_(child_ids),
-            Photo.is_deleted == False
+            Photo.is_deleted == False,
+            Photo.status == PhotoStatus.APPROVED
         ).order_by(Photo.uploaded_at.desc()).limit(12).all()
 
         if not recent_photos:
@@ -284,8 +286,11 @@ def get_conversation_context(query: str):
                 children = db.query(Child).filter(Child.parent_id == user.id).all()
                 child_ids = [c.id for c in children]
 
+                from app.database.models import PhotoStatus
                 recent_photos = db.query(Photo).filter(
-                    Photo.child_id.in_(child_ids)
+                    Photo.child_id.in_(child_ids),
+                    Photo.status == PhotoStatus.APPROVED,
+                    Photo.is_deleted == False
                 ).order_by(Photo.uploaded_at.desc()).limit(5).all()
 
                 if recent_photos:

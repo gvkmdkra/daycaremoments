@@ -118,25 +118,33 @@ with tab1:
         } for p in photos_db]
 
     if photos:
-        # Display photos in grid
+        st.info(f"📷 Showing {len(photos)} photo(s)")
+
+        # Display photos in organized grid with better spacing
         cols = st.columns(3)
         for idx, photo in enumerate(photos):
             with cols[idx % 3]:
-                st.image(photo['url'], use_container_width=True)
+                # Photo card container with border
+                with st.container():
+                    st.image(photo['url'], use_container_width=True)
 
-                # Get child name
-                child = next((c for c in children if c['id'] == photo['child_id']), None)
-                child_name = f"{child['first_name']}" if child else "Unknown"
+                    # Get child name
+                    child = next((c for c in children if c['id'] == photo['child_id']), None)
+                    child_name = f"{child['first_name']}" if child else "Unknown"
 
-                st.caption(f"👶 {child_name} | {photo['uploaded_at'].strftime('%b %d, %I:%M %p')}")
+                    # Photo metadata
+                    st.markdown(f"**👶 {child_name}**")
+                    st.caption(f"📅 {photo['uploaded_at'].strftime('%b %d, %Y at %I:%M %p')}")
 
-                if photo['caption']:
-                    st.caption(f"💬 {photo['caption']}")
+                    if photo['caption']:
+                        st.caption(f"💬 {photo['caption']}")
 
-                # Download button
-                st.button("⬇️ Download", key=f"download_{photo['id']}", use_container_width=True)
+                    # Download button
+                    st.button("⬇️ Download", key=f"download_{photo['id']}", use_container_width=True)
+
+                st.markdown("---")  # Divider between photos
     else:
-        st.info("No photos found for the selected filters.")
+        st.info("📷 No photos found for the selected filters. Try adjusting your date range or child selection.")
 
 # ===== TAB 2: TIMELINE =====
 with tab2:
