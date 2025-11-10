@@ -30,16 +30,85 @@ except Exception as e:
 # Apply professional theme
 apply_professional_theme()
 
-# Header
-st.markdown('<h1 style="text-align: center;">👶 DaycareMoments</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; font-size: 1.2rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">AI-Powered Photo Sharing Platform for Daycares</p>', unsafe_allow_html=True)
+# Hero Section with Animated Gradient
+st.markdown("""
+<div style="
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    border-radius: 30px;
+    padding: 3rem 2rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    margin-bottom: 2rem;
+    animation: float 3s ease-in-out infinite;
+">
+    <div style="font-size: 5rem; margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite;">👶</div>
+    <h1 style="
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 20px rgba(0,0,0,0.3);
+    ">DaycareMoments</h1>
+    <p style="
+        font-size: 1.5rem;
+        color: #ffffff;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        text-shadow: 1px 1px 10px rgba(0,0,0,0.5);
+    ">✨ Capture Every Precious Moment with AI-Powered Intelligence ✨</p>
+    <p style="
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.9);
+        max-width: 800px;
+        margin: 0 auto 2rem auto;
+        line-height: 1.8;
+    ">
+        The revolutionary platform connecting daycares and parents through smart photo sharing,
+        real-time AI assistance, and seamless communication. Watch your child's day unfold,
+        powered by cutting-edge facial recognition and intelligent automation.
+    </p>
+</div>
+
+<style>
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+@media (max-width: 768px) {
+    div h1 { font-size: 2rem !important; }
+    div p { font-size: 1rem !important; }
+    div div { font-size: 3rem !important; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Check if user is logged in
 if 'user_id' in st.session_state:
-    st.success(f"✅ Welcome back, {st.session_state.get('first_name', 'User')}!")
-    st.info("👈 Use the sidebar to navigate to your dashboard")
+    st.success(f"🎉 Welcome back, {st.session_state.get('first_name', 'User')}! Your dashboard awaits.")
+    st.info("👈 Navigate to your personalized dashboard using the sidebar")
 else:
-    st.info("👈 Please login or register using the sidebar to get started")
+    st.markdown("""
+    <div style="
+        background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        margin-bottom: 2rem;
+    ">
+        👈 <strong>Get Started Now!</strong> Login or register using the sidebar to experience the magic
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 

@@ -3,13 +3,41 @@
 import streamlit as st
 
 def apply_professional_theme():
-    """Apply professional purple gradient theme with modern UI elements"""
+    """Apply professional purple gradient theme with modern UI elements and mobile responsiveness"""
     st.markdown("""
     <style>
         /* ===== MAIN BACKGROUND ===== */
         .main {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            padding: 2rem !important;
+            padding: 1rem !important;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .main {
+                padding: 0.5rem !important;
+            }
+
+            h1 {
+                font-size: 2rem !important;
+            }
+
+            h2 {
+                font-size: 1.5rem !important;
+            }
+
+            h3 {
+                font-size: 1.2rem !important;
+            }
+
+            [data-testid="stMetricValue"] {
+                font-size: 1.5rem !important;
+            }
+
+            .stButton > button {
+                padding: 0.5rem 1rem !important;
+                font-size: 14px !important;
+            }
         }
 
         /* ===== SIDEBAR STYLING ===== */
