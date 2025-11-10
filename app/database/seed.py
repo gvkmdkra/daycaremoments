@@ -185,52 +185,77 @@ def seed_demo_data():
 
         db.flush()  # Get child IDs
 
-        # Create demo photos for children with AI-analyzed activities
-        # Using child-friendly placeholder images that simulate real daycare photos
-        photo_activities = ["Playing", "Lunch Time", "Nap Time", "Art Class", "Outdoor Play", "Story Time", "Music Class", "Learning"]
+        # Create demo photos for children - ACTUAL DAYCARE ACTIVITY PHOTOS
+        # Using realistic daycare activity photos from Unsplash (child-safe, activity-focused)
 
-        # Import photo analysis service
-        from app.services.photo_analysis import get_photo_analysis_service
-        photo_analyzer = get_photo_analysis_service()
+        # Specific daycare activity photos (children playing, learning, eating, etc.)
+        daycare_photo_urls = {
+            "playing": [
+                "https://images.unsplash.com/photo-1587616211892-7e11a1f0ec19?w=400&h=300&fit=crop",  # Kids with building blocks
+                "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=300&fit=crop",  # Child playing with toys
+                "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&h=300&fit=crop",  # Kids playing together
+            ],
+            "lunch": [
+                "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=300&fit=crop",  # Child eating
+                "https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=400&h=300&fit=crop",  # Meal time
+                "https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&h=300&fit=crop",  # Kids eating lunch
+            ],
+            "art": [
+                "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&h=300&fit=crop",  # Child painting
+                "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=400&h=300&fit=crop",  # Art class
+                "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=400&h=300&fit=crop",  # Kids doing crafts
+            ],
+            "learning": [
+                "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop",  # Child reading
+                "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&h=300&fit=crop",  # Kids learning
+                "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=300&fit=crop",  # Classroom activity
+            ],
+            "outdoor": [
+                "https://images.unsplash.com/photo-1560421683-6856ea585c78?w=400&h=300&fit=crop",  # Kids playing outside
+                "https://images.unsplash.com/photo-1503249023995-51b0f3778ccf?w=400&h=300&fit=crop",  # Outdoor play
+                "https://images.unsplash.com/photo-1599687267812-35c05ff70ee9?w=400&h=300&fit=crop",  # Playground
+            ],
+            "nap": [
+                "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=300&fit=crop",  # Child resting
+                "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop",  # Nap time
+                "https://images.unsplash.com/photo-1519548410711-1d0d1853c2e0?w=400&h=300&fit=crop",  # Sleeping child
+            ]
+        }
+
+        # Map photo activities to actual activity types
+        activity_mapping = {
+            "Playing": "playing",
+            "Lunch Time": "lunch",
+            "Nap Time": "nap",
+            "Art Class": "art",
+            "Outdoor Play": "outdoor",
+            "Story Time": "learning",
+            "Music Class": "playing",
+            "Learning": "learning"
+        }
 
         for i, child in enumerate(children_list):
-            # Create 2-4 photos per child
-            num_photos = random.randint(2, 4)
+            # Create 3-4 photos per child with REAL activities
+            num_photos = random.randint(3, 4)
             for j in range(num_photos):
-                days_ago = random.randint(0, 7)
+                days_ago = random.randint(0, 3)  # Recent photos only
 
-                # Use baby/child-themed photos from various sources
-                # These are publicly available child-safe images
-                photo_sources = [
-                    f"https://images.pexels.com/photos/1166394/pexels-photo-1166394.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child playing
-                    f"https://images.pexels.com/photos/1648387/pexels-photo-1648387.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child with toys
-                    f"https://images.pexels.com/photos/1648377/pexels-photo-1648377.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child eating
-                    f"https://images.pexels.com/photos/1416736/pexels-photo-1416736.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child learning
-                    f"https://images.pexels.com/photos/1648360/pexels-photo-1648360.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child outdoor
-                ]
+                # Select specific activity and matching photo
+                activity_names = list(activity_mapping.keys())
+                selected_activity = activity_names[j % len(activity_names)]
+                activity_category = activity_mapping[selected_activity]
 
-                # Pick random photo or use picsum as fallback
-                photo_id = (i * 10) + j + 100
-                photo_url = random.choice(photo_sources) if random.random() > 0.5 else f"https://picsum.photos/seed/{photo_id}/400/300"
-
-                # Select activity and create caption
-                activity_type = random.choice(photo_activities)
-                caption = f"{child.first_name} {activity_type}"
-
-                # AI Analysis: Automatically detect activity from photo caption
-                analysis = photo_analyzer.analyze_photo(photo_url, {
-                    "original_file_name": f"{child.first_name}_Photo_{j+1}.jpg",
-                    "caption": caption,
-                    "captured_at": datetime.utcnow() - timedelta(days=days_ago)
-                })
+                # Get appropriate photo for this activity
+                photo_url = random.choice(daycare_photo_urls[activity_category])
+                caption = f"{child.first_name} - {selected_activity}"
 
                 photo = Photo(
-                    file_name=f"{child.first_name.lower()}_photo_{j+1}.jpg",
-                    original_file_name=f"{child.first_name}_Photo_{j+1}.jpg",
+                    file_name=f"{child.first_name.lower()}_{activity_category}_{j+1}.jpg",
+                    original_file_name=f"{child.first_name}_{selected_activity}_{j+1}.jpg",
                     url=photo_url,
-                    thumbnail_url=photo_url.replace("/400/300", "/150/150") if "picsum" in photo_url else photo_url,
+                    thumbnail_url=photo_url,  # Same URL, Unsplash handles resizing
                     caption=caption,
-                    captured_at=datetime.utcnow() - timedelta(days=days_ago),
+                    captured_at=datetime.utcnow() - timedelta(days=days_ago, hours=random.randint(8, 16)),
                     uploaded_by=users_dict[UserRole.STAFF].id,
                     child_id=child.id,
                     daycare_id=demo_daycare.id,
