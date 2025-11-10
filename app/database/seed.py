@@ -192,11 +192,13 @@ def seed_demo_data():
             num_photos = random.randint(2, 4)
             for j in range(num_photos):
                 days_ago = random.randint(0, 7)
+                # Use picsum.photos for reliable demo images (better than placeholder.com)
+                photo_id = (i * 10) + j + 100  # Unique photo ID for consistent images
                 photo = Photo(
                     file_name=f"{child.first_name.lower()}_photo_{j+1}.jpg",
                     original_file_name=f"{child.first_name}_Photo_{j+1}.jpg",
-                    url=f"https://via.placeholder.com/400x300/667eea/ffffff?text={child.first_name}+Photo+{j+1}",
-                    thumbnail_url=f"https://via.placeholder.com/150x150/667eea/ffffff?text={child.first_name}",
+                    url=f"https://picsum.photos/seed/{photo_id}/400/300",
+                    thumbnail_url=f"https://picsum.photos/seed/{photo_id}/150/150",
                     caption=f"{child.first_name} {random.choice(photo_activities)}",
                     captured_at=datetime.utcnow() - timedelta(days=days_ago),
                     uploaded_by=users_dict[UserRole.STAFF].id,
