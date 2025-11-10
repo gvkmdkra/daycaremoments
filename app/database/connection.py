@@ -26,7 +26,7 @@ def init_db():
 
     _engine = create_engine(
         db_url,
-        echo=Config.DEBUG,
+        echo=False,  # Disable SQL query logging for clean production logs
         pool_pre_ping=True,
         connect_args={"check_same_thread": False} if "sqlite" in db_url else {}
     )
