@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 *.so
 .Python
+env/
+venv/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -20,19 +23,11 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-venv/
-env/
-ENV/
-.venv
-
-# Environment Variables
+# Environment
 .env
+.venv
+*.env
 .env.local
-.env.*.local
-
-# Streamlit
-.streamlit/secrets.toml
 
 # IDE
 .vscode/
@@ -40,35 +35,36 @@ ENV/
 *.swp
 *.swo
 *~
-.DS_Store
-
-# Testing
-.coverage
-.pytest_cache/
-htmlcov/
-.tox/
-.nox/
-
-# Logs
-*.log
-logs/
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+daycare.db
 
-# Uploads
-uploads/
-temp/
+# Streamlit
+.streamlit/secrets.toml
+streamlit_secrets.toml
 
 # OS
-Thumbs.db
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Invalid files
-nul
-*/nul
-**/nul
+# Logs
+*.log
+logs/
 
-streamlit_secrets.toml
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation (keep only main docs)
+docs/archive/
+
+# Temporary
+tmp/
+temp/
+*.tmp
