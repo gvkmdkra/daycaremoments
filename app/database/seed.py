@@ -188,37 +188,38 @@ def seed_demo_data():
         # Create demo photos for children - ACTUAL DAYCARE ACTIVITY PHOTOS
         # Using realistic daycare activity photos from Unsplash (child-safe, activity-focused)
 
-        # Specific daycare activity photos (children playing, learning, eating, etc.)
+        # CONSISTENT Montessori/Daycare photos - showing children in actual activities
+        # Using placeholder.com with descriptive text for demo consistency
         daycare_photo_urls = {
             "playing": [
-                "https://images.unsplash.com/photo-1587616211892-7e11a1f0ec19?w=400&h=300&fit=crop",  # Kids with building blocks
-                "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=300&fit=crop",  # Child playing with toys
-                "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&h=300&fit=crop",  # Kids playing together
+                "https://via.placeholder.com/400x300/87CEEB/000000?text=Child+Playing+with+Blocks",
+                "https://via.placeholder.com/400x300/98D8C8/000000?text=Kids+Playing+Together",
+                "https://via.placeholder.com/400x300/FFB6C1/000000?text=Toddler+with+Toys",
             ],
             "lunch": [
-                "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=300&fit=crop",  # Child eating
-                "https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=400&h=300&fit=crop",  # Meal time
-                "https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&h=300&fit=crop",  # Kids eating lunch
+                "https://via.placeholder.com/400x300/FFE4B5/000000?text=Child+Eating+Lunch",
+                "https://via.placeholder.com/400x300/F0E68C/000000?text=Snack+Time",
+                "https://via.placeholder.com/400x300/DEB887/000000?text=Mealtime+Activity",
             ],
             "art": [
-                "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&h=300&fit=crop",  # Child painting
-                "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=400&h=300&fit=crop",  # Art class
-                "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=400&h=300&fit=crop",  # Kids doing crafts
+                "https://via.placeholder.com/400x300/FFB347/000000?text=Child+Painting",
+                "https://via.placeholder.com/400x300/FF6B9D/000000?text=Arts+and+Crafts",
+                "https://via.placeholder.com/400x300/C39BD3/000000?text=Creative+Activity",
             ],
             "learning": [
-                "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop",  # Child reading
-                "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&h=300&fit=crop",  # Kids learning
-                "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=300&fit=crop",  # Classroom activity
+                "https://via.placeholder.com/400x300/AED6F1/000000?text=Reading+Time",
+                "https://via.placeholder.com/400x300/A9DFBF/000000?text=Learning+Numbers",
+                "https://via.placeholder.com/400x300/FAD7A0/000000?text=Montessori+Activity",
             ],
             "outdoor": [
-                "https://images.unsplash.com/photo-1560421683-6856ea585c78?w=400&h=300&fit=crop",  # Kids playing outside
-                "https://images.unsplash.com/photo-1503249023995-51b0f3778ccf?w=400&h=300&fit=crop",  # Outdoor play
-                "https://images.unsplash.com/photo-1599687267812-35c05ff70ee9?w=400&h=300&fit=crop",  # Playground
+                "https://via.placeholder.com/400x300/90EE90/000000?text=Outdoor+Play",
+                "https://via.placeholder.com/400x300/98FB98/000000?text=Playground+Fun",
+                "https://via.placeholder.com/400x300/9ACD32/000000?text=Nature+Exploration",
             ],
             "nap": [
-                "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=300&fit=crop",  # Child resting
-                "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop",  # Nap time
-                "https://images.unsplash.com/photo-1519548410711-1d0d1853c2e0?w=400&h=300&fit=crop",  # Sleeping child
+                "https://via.placeholder.com/400x300/E6E6FA/000000?text=Nap+Time",
+                "https://via.placeholder.com/400x300/D8BFD8/000000?text=Rest+Period",
+                "https://via.placeholder.com/400x300/DDA0DD/000000?text=Quiet+Time",
             ]
         }
 
