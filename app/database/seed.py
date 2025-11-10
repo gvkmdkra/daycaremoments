@@ -185,21 +185,51 @@ def seed_demo_data():
 
         db.flush()  # Get child IDs
 
-        # Create demo photos for children
+        # Create demo photos for children with AI-analyzed activities
+        # Using child-friendly placeholder images that simulate real daycare photos
         photo_activities = ["Playing", "Lunch Time", "Nap Time", "Art Class", "Outdoor Play", "Story Time", "Music Class", "Learning"]
+
+        # Import photo analysis service
+        from app.services.photo_analysis import get_photo_analysis_service
+        photo_analyzer = get_photo_analysis_service()
+
         for i, child in enumerate(children_list):
             # Create 2-4 photos per child
             num_photos = random.randint(2, 4)
             for j in range(num_photos):
                 days_ago = random.randint(0, 7)
-                # Use picsum.photos for reliable demo images (better than placeholder.com)
-                photo_id = (i * 10) + j + 100  # Unique photo ID for consistent images
+
+                # Use baby/child-themed photos from various sources
+                # These are publicly available child-safe images
+                photo_sources = [
+                    f"https://images.pexels.com/photos/1166394/pexels-photo-1166394.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child playing
+                    f"https://images.pexels.com/photos/1648387/pexels-photo-1648387.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child with toys
+                    f"https://images.pexels.com/photos/1648377/pexels-photo-1648377.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child eating
+                    f"https://images.pexels.com/photos/1416736/pexels-photo-1416736.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child learning
+                    f"https://images.pexels.com/photos/1648360/pexels-photo-1648360.jpeg?auto=compress&cs=tinysrgb&w=400&h=300",  # Child outdoor
+                ]
+
+                # Pick random photo or use picsum as fallback
+                photo_id = (i * 10) + j + 100
+                photo_url = random.choice(photo_sources) if random.random() > 0.5 else f"https://picsum.photos/seed/{photo_id}/400/300"
+
+                # Select activity and create caption
+                activity_type = random.choice(photo_activities)
+                caption = f"{child.first_name} {activity_type}"
+
+                # AI Analysis: Automatically detect activity from photo caption
+                analysis = photo_analyzer.analyze_photo(photo_url, {
+                    "original_file_name": f"{child.first_name}_Photo_{j+1}.jpg",
+                    "caption": caption,
+                    "captured_at": datetime.utcnow() - timedelta(days=days_ago)
+                })
+
                 photo = Photo(
                     file_name=f"{child.first_name.lower()}_photo_{j+1}.jpg",
                     original_file_name=f"{child.first_name}_Photo_{j+1}.jpg",
-                    url=f"https://picsum.photos/seed/{photo_id}/400/300",
-                    thumbnail_url=f"https://picsum.photos/seed/{photo_id}/150/150",
-                    caption=f"{child.first_name} {random.choice(photo_activities)}",
+                    url=photo_url,
+                    thumbnail_url=photo_url.replace("/400/300", "/150/150") if "picsum" in photo_url else photo_url,
+                    caption=caption,
                     captured_at=datetime.utcnow() - timedelta(days=days_ago),
                     uploaded_by=users_dict[UserRole.STAFF].id,
                     child_id=child.id,
