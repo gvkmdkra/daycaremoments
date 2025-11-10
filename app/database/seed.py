@@ -1,7 +1,7 @@
 """Database seeding for demo data"""
 
 from app.database import get_db
-from app.database.models import Daycare, User, UserRole, Child, Photo, PhotoStatus
+from app.database.models import Daycare, User, UserRole, Child, Photo, PhotoStatus, Activity
 from app.utils.auth import hash_password
 from datetime import datetime, date, timedelta
 import random
@@ -206,6 +206,45 @@ def seed_demo_data():
                     approved_by=users_dict[UserRole.ADMIN].id
                 )
                 db.add(photo)
+
+        db.flush()  # Get photo IDs
+
+        # Create demo activities for today
+        activity_types = ["meal", "nap", "play", "learning", "outdoor", "art"]
+        moods = ["😊 Happy", "🙂 Good", "😐 Okay", "🤩 Excited"]
+        activity_notes = {
+            "meal": ["Ate well, enjoyed lunch", "Finished all vegetables", "Tried new food today"],
+            "nap": ["Slept peacefully for 2 hours", "Took a short nap", "Rested well"],
+            "play": ["Played with blocks", "Had fun with friends", "Enjoyed outdoor toys"],
+            "learning": ["Practiced ABCs", "Counted to 10", "Learned colors"],
+            "outdoor": ["Played on swings", "Ran around playground", "Explored nature"],
+            "art": ["Painted a beautiful picture", "Made a craft", "Drew with crayons"]
+        }
+
+        staff_user = users_dict[UserRole.STAFF]
+        today = datetime.now().date()
+
+        for child in children_list:
+            # Create 3-5 activities for today
+            num_activities = random.randint(3, 5)
+            for i in range(num_activities):
+                activity_type = random.choice(activity_types)
+                # Random time today between 8 AM and 5 PM
+                hour = random.randint(8, 16)
+                minute = random.choice([0, 15, 30, 45])
+                activity_time = datetime.combine(today, datetime.min.time().replace(hour=hour, minute=minute))
+
+                activity = Activity(
+                    child_id=child.id,
+                    daycare_id=demo_daycare.id,
+                    staff_id=staff_user.id,
+                    activity_type=activity_type,
+                    activity_time=activity_time,
+                    duration_minutes=random.choice([15, 30, 45, 60, 90, 120]) if activity_type in ["nap", "play"] else None,
+                    notes=random.choice(activity_notes[activity_type]),
+                    mood=random.choice(moods)
+                )
+                db.add(activity)
 
         db.commit()
         # Silently seed without print statements (for production)
