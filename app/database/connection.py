@@ -36,6 +36,14 @@ def init_db():
     # Create all tables
     Base.metadata.create_all(bind=_engine)
 
+    # Seed demo data on first run
+    try:
+        from .seed import seed_demo_data
+        seed_demo_data()
+    except Exception as e:
+        # Silently fail if seeding fails (e.g., data already exists)
+        pass
+
     return _engine
 
 
