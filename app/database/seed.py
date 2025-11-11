@@ -189,37 +189,37 @@ def seed_demo_data():
         # Using realistic daycare activity photos from Unsplash (child-safe, activity-focused)
 
         # CONSISTENT Montessori/Daycare photos - showing children in actual activities
-        # Using placeholder.com with descriptive text for demo consistency
+        # Using placehold.co (VERIFIED WORKING) with descriptive text for demo consistency
         daycare_photo_urls = {
             "playing": [
-                "https://via.placeholder.com/400x300/87CEEB/000000?text=Child+Playing+with+Blocks",
-                "https://via.placeholder.com/400x300/98D8C8/000000?text=Kids+Playing+Together",
-                "https://via.placeholder.com/400x300/FFB6C1/000000?text=Toddler+with+Toys",
+                "https://placehold.co/400x300/87CEEB/000000/png?text=Child+Playing+with+Blocks",
+                "https://placehold.co/400x300/98D8C8/000000/png?text=Kids+Playing+Together",
+                "https://placehold.co/400x300/FFB6C1/000000/png?text=Toddler+with+Toys",
             ],
             "lunch": [
-                "https://via.placeholder.com/400x300/FFE4B5/000000?text=Child+Eating+Lunch",
-                "https://via.placeholder.com/400x300/F0E68C/000000?text=Snack+Time",
-                "https://via.placeholder.com/400x300/DEB887/000000?text=Mealtime+Activity",
+                "https://placehold.co/400x300/FFE4B5/000000/png?text=Child+Eating+Lunch",
+                "https://placehold.co/400x300/F0E68C/000000/png?text=Snack+Time",
+                "https://placehold.co/400x300/DEB887/000000/png?text=Mealtime+Activity",
             ],
             "art": [
-                "https://via.placeholder.com/400x300/FFB347/000000?text=Child+Painting",
-                "https://via.placeholder.com/400x300/FF6B9D/000000?text=Arts+and+Crafts",
-                "https://via.placeholder.com/400x300/C39BD3/000000?text=Creative+Activity",
+                "https://placehold.co/400x300/FFB347/000000/png?text=Child+Painting",
+                "https://placehold.co/400x300/FF6B9D/000000/png?text=Arts+and+Crafts",
+                "https://placehold.co/400x300/C39BD3/000000/png?text=Creative+Activity",
             ],
             "learning": [
-                "https://via.placeholder.com/400x300/AED6F1/000000?text=Reading+Time",
-                "https://via.placeholder.com/400x300/A9DFBF/000000?text=Learning+Numbers",
-                "https://via.placeholder.com/400x300/FAD7A0/000000?text=Montessori+Activity",
+                "https://placehold.co/400x300/AED6F1/000000/png?text=Reading+Time",
+                "https://placehold.co/400x300/A9DFBF/000000/png?text=Learning+Numbers",
+                "https://placehold.co/400x300/FAD7A0/000000/png?text=Montessori+Activity",
             ],
             "outdoor": [
-                "https://via.placeholder.com/400x300/90EE90/000000?text=Outdoor+Play",
-                "https://via.placeholder.com/400x300/98FB98/000000?text=Playground+Fun",
-                "https://via.placeholder.com/400x300/9ACD32/000000?text=Nature+Exploration",
+                "https://placehold.co/400x300/90EE90/000000/png?text=Outdoor+Play",
+                "https://placehold.co/400x300/98FB98/000000/png?text=Playground+Fun",
+                "https://placehold.co/400x300/9ACD32/000000/png?text=Nature+Exploration",
             ],
             "nap": [
-                "https://via.placeholder.com/400x300/E6E6FA/000000?text=Nap+Time",
-                "https://via.placeholder.com/400x300/D8BFD8/000000?text=Rest+Period",
-                "https://via.placeholder.com/400x300/DDA0DD/000000?text=Quiet+Time",
+                "https://placehold.co/400x300/E6E6FA/000000/png?text=Nap+Time",
+                "https://placehold.co/400x300/D8BFD8/000000/png?text=Rest+Period",
+                "https://placehold.co/400x300/DDA0DD/000000/png?text=Quiet+Time",
             ]
         }
 
