@@ -50,6 +50,7 @@ streamlit_secrets.toml
 credentials.json
 client_secret*.json
 token.json
+service_account.json
 
 # OS
 .DS_Store

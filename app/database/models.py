@@ -83,6 +83,12 @@ class Daycare(Base):
     settings = Column(JSON, default={})
     is_active = Column(Boolean, default=True)
     timezone = Column(String, default='America/New_York')
+
+    # Google Drive storage management (for service account mode)
+    google_drive_folder_id = Column(String)  # Root folder ID for this daycare
+    storage_quota_mb = Column(Integer, default=5000)  # 5GB default quota
+    storage_used_mb = Column(Integer, default=0)  # Current usage in MB
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -19,7 +19,7 @@ def test_connection():
         print("   Please download OAuth credentials from Google Cloud Console")
         return False
 
-    print("✓ credentials.json found")
+    print("[OK] credentials.json found")
 
     # Initialize service
     print("\nInitializing Google Drive service...")
@@ -28,7 +28,7 @@ def test_connection():
             credentials_path='credentials.json',
             token_path='token.json'
         )
-        print("✓ Service initialized")
+        print("[OK] Service initialized")
     except Exception as e:
         print(f"❌ Failed to initialize: {e}")
         return False
@@ -37,7 +37,7 @@ def test_connection():
     print("\nAuthenticating (browser will open)...")
     try:
         service.authenticate_user()
-        print("✓ Authentication successful")
+        print("[OK] Authentication successful")
     except Exception as e:
         print(f"❌ Authentication failed: {e}")
         return False
@@ -51,7 +51,7 @@ def test_connection():
             folder_id=folder_id,
             page_size=10
         )
-        print(f"✓ Folder accessible - Found {len(files)} file(s)")
+        print(f"[OK] Folder accessible - Found {len(files)} file(s)")
 
         if files:
             print("\nSample files:")
@@ -65,7 +65,7 @@ def test_connection():
             query="mimeType contains 'image/'",
             page_size=20
         )
-        print(f"\n✓ Found {len(images)} image file(s)")
+        print(f"\n[OK] Found {len(images)} image file(s)")
 
         if images:
             print("\nImage files:")
@@ -78,13 +78,13 @@ def test_connection():
 
     # All tests passed
     print("\n" + "="*60)
-    print(" ✅ ALL TESTS PASSED")
+    print(" [SUCCESS] ALL TESTS PASSED")
     print("="*60)
     print("\nYour Google Drive is properly connected!")
     print(f"Folder ID: {folder_id}")
     print(f"Files available: {len(files)}")
     print(f"Images available: {len(images)}")
-    print("\n🎉 Ready to import photos into DaycareMoments!")
+    print("\nReady to import photos into DaycareMoments!")
 
     return True
 
