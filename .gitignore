@@ -46,6 +46,11 @@ daycare.db
 .streamlit/secrets.toml
 streamlit_secrets.toml
 
+# Google Drive
+credentials.json
+client_secret*.json
+token.json
+
 # OS
 .DS_Store
 Thumbs.db
