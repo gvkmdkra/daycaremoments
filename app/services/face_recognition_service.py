@@ -111,18 +111,41 @@ class FaceRecognitionService:
                 # Get all children with face encodings in this daycare
                 children = db.query(Child).filter(
                     Child.daycare_id == daycare_id,
-                    Child.face_encoding.isnot(None)
+                    Child.is_active == True
                 ).all()
 
+                best_match_id = None
+                best_match_distance = float('inf')
+
                 for child in children:
-                    # Compare with stored encoding
-                    if child.face_encoding:
-                        known_encoding = np.frombuffer(child.face_encoding, dtype=np.float64)
+                    # Check if child has face encodings (JSON list)
+                    if not child.face_encodings or len(child.face_encodings) == 0:
+                        continue
 
-                        if self.compare_faces(known_encoding, face_encoding):
-                            return child.id
+                    # Compare with each stored encoding
+                    for stored_encoding_list in child.face_encodings:
+                        try:
+                            known_encoding = np.array(stored_encoding_list, dtype=np.float64)
 
-                return None
+                            # Compare faces and get distance
+                            matches = face_recognition.compare_faces(
+                                [known_encoding],
+                                face_encoding,
+                                tolerance=self.tolerance
+                            )
+
+                            if matches[0]:
+                                # Calculate face distance for best match
+                                distance = face_recognition.face_distance([known_encoding], face_encoding)[0]
+                                if distance < best_match_distance:
+                                    best_match_distance = distance
+                                    best_match_id = child.id
+
+                        except Exception as e:
+                            print(f"Error comparing encoding: {e}")
+                            continue
+
+                return best_match_id
 
         except Exception as e:
             print(f"Child identification error: {e}")
@@ -152,9 +175,68 @@ class FaceRecognitionService:
 
         return identified_children
 
+    def train_child(self, child_id: str, training_images: List[bytes]) -> Dict[str, any]:
+        """
+        Train face recognition for a child using multiple training photos
+
+        Args:
+            child_id: Child ID
+            training_images: List of image bytes containing child's face
+
+        Returns:
+            Dictionary with success status and details
+        """
+        result = {
+            "success": False,
+            "encodings_added": 0,
+            "total_encodings": 0,
+            "failed_images": 0,
+            "error": None
+        }
+
+        try:
+            all_encodings = []
+
+            # Extract encodings from each training image
+            for image_data in training_images:
+                encoding = self.encode_face(image_data)
+                if encoding is not None:
+                    # Convert to list for JSON storage
+                    all_encodings.append(encoding.tolist())
+                else:
+                    result["failed_images"] += 1
+
+            if not all_encodings:
+                result["error"] = "No faces detected in training images"
+                return result
+
+            # Store encodings in database
+            with get_db() as db:
+                child = db.query(Child).filter(Child.id == child_id).first()
+
+                if child:
+                    # Update face encodings (append to existing or create new)
+                    existing_encodings = child.face_encodings or []
+                    child.face_encodings = existing_encodings + all_encodings
+                    child.training_photo_count = len(child.face_encodings)
+                    db.commit()
+
+                    result["success"] = True
+                    result["encodings_added"] = len(all_encodings)
+                    result["total_encodings"] = child.training_photo_count
+                    return result
+                else:
+                    result["error"] = "Child not found"
+                    return result
+
+        except Exception as e:
+            result["error"] = str(e)
+            print(f"Face training error: {e}")
+            return result
+
     def register_child_face(self, child_id: str, image_data: bytes) -> bool:
         """
-        Register a child's face for future recognition
+        Register a single child's face for future recognition (legacy method)
 
         Args:
             child_id: Child ID
@@ -163,28 +245,8 @@ class FaceRecognitionService:
         Returns:
             True if successful
         """
-        try:
-            # Get face encoding
-            encoding = self.encode_face(image_data)
-
-            if encoding is None:
-                return False
-
-            # Store encoding in database
-            with get_db() as db:
-                child = db.query(Child).filter(Child.id == child_id).first()
-
-                if child:
-                    # Convert numpy array to bytes for storage
-                    child.face_encoding = encoding.tobytes()
-                    db.commit()
-                    return True
-
-                return False
-
-        except Exception as e:
-            print(f"Face registration error: {e}")
-            return False
+        result = self.train_child(child_id, [image_data])
+        return result["success"]
 
     def auto_tag_photo(self, photo_id: str) -> List[str]:
         """

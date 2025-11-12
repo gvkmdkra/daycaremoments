@@ -136,7 +136,8 @@ class Child(Base):
     date_of_birth = Column(Date, nullable=False)
     gender = Column(String)
     profile_photo = Column(String)
-    face_encoding = Column(LargeBinary)  # Stored face encoding for recognition
+    face_encodings = Column(JSON, default=[])  # List of face encodings for recognition (multiple training photos)
+    training_photo_count = Column(Integer, default=0)  # Number of photos used for training
     allergies = Column(Text)
     medical_notes = Column(Text)
     emergency_contact = Column(JSON)
@@ -192,7 +193,11 @@ class Photo(Base):
     height = Column(Integer)
     mime_type = Column(String)
     caption = Column(Text)
+    ai_generated_description = Column(Text)  # AI-generated activity description
     tags = Column(JSON, default=[])
+    detected_faces = Column(JSON, default=[])  # List of detected face locations
+    face_recognition_complete = Column(Boolean, default=False)
+    auto_tagged = Column(Boolean, default=False)  # Whether child was auto-tagged by AI
     location = Column(String)
     captured_at = Column(DateTime, nullable=False)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
