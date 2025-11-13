@@ -1,16 +1,13 @@
 """
 Photo Processing Service - Automated photo processing with face recognition and AI
-Processes uploaded photos, detects faces, matches children, and generates AI descriptions
+Processes uploaded photos, detects faces, matches persons, and generates AI descriptions
 """
 
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from datetime import datetime
-import io
-import json
-from PIL import Image
 
 from app.database import get_db
-from app.database.models import Photo, Child, Activity, PhotoStatus
+from app.database.models import Photo, Person
 from app.services.face_recognition_service import get_face_recognition_service
 from app.services.llm_service import get_llm_service
 
@@ -40,16 +37,14 @@ class PhotoProcessor:
             Processing result dictionary with:
                 - success: bool
                 - faces_detected: int
-                - children_identified: List[str]
-                - activity_created: bool
+                - persons_identified: List[str]
                 - description: str
                 - error: str (if any)
         """
         result = {
             "success": False,
             "faces_detected": 0,
-            "children_identified": [],
-            "activity_created": False,
+            "persons_identified": [],
             "description": "",
             "error": None
         }
@@ -66,98 +61,45 @@ class PhotoProcessor:
                 face_locations = self.face_service.get_face_locations(image_data)
                 result["faces_detected"] = len(face_locations)
 
-                # Store face locations
-                photo.detected_faces = face_locations
-                photo.face_recognition_complete = True
+                # Step 2: Identify persons in the photo
+                identified_person_ids = self.face_service.identify_persons_in_photo(
+                    image_data,
+                    photo.organization_id
+                )
+                result["persons_identified"] = identified_person_ids
 
-                # Step 2: Extract face encodings
-                face_encodings = self.face_service.encode_faces_multiple(image_data)
+                # Step 3: If persons identified, process and generate description
+                if identified_person_ids:
+                    # Use first identified person as primary
+                    primary_person_id = identified_person_ids[0]
+                    photo.person_id = primary_person_id
 
-                # Step 3: Identify children in the photo
-                identified_child_ids = []
-                for encoding in face_encodings:
-                    child_id = self.face_service.identify_child(encoding, photo.daycare_id)
-                    if child_id and child_id not in identified_child_ids:
-                        identified_child_ids.append(child_id)
+                    # Get person details for context
+                    person = db.query(Person).filter(Person.id == primary_person_id).first()
+                    person_name = person.name if person else "the child"
 
-                result["children_identified"] = identified_child_ids
-
-                # Step 4: If children identified, process each one
-                if identified_child_ids:
-                    # Use first identified child as primary
-                    primary_child_id = identified_child_ids[0]
-                    photo.child_id = primary_child_id
-                    photo.auto_tagged = True
-
-                    # Get child details for context
-                    child = db.query(Child).filter(Child.id == primary_child_id).first()
-                    child_name = f"{child.first_name} {child.last_name}" if child else "the child"
-
-                    # Step 5: Prepare context for AI analysis
-                    captured_time = photo.captured_at or photo.uploaded_at
-                    time_of_day = captured_time.strftime("%H:%M")
-
+                    # Prepare context for AI analysis
                     photo_context = {
-                        "child_name": child.first_name if child else "the child",
-                        "time_of_day": time_of_day,
-                        "location": photo.location,
-                        "detected_objects": []  # Could integrate with object detection in future
+                        "child_name": person_name,
+                        "time_of_day": datetime.now().strftime("%H:%M"),
+                        "location": None,
+                        "detected_objects": []
                     }
 
-                    # Step 6: Analyze activity type
-                    analysis_result = self.llm_service.analyze_photo_activity({
-                        "child_name": child.first_name if child else "the child",
-                        "time_of_day": time_of_day,
-                        "detected_objects": []
-                    })
-
-                    activity_type = analysis_result.get("activity_type", "other")
-                    mood = analysis_result.get("mood", "happy")
-                    suggested_duration = analysis_result.get("suggested_duration")
-
-                    # Step 7: Generate natural description
+                    # Generate natural description
                     description = self.llm_service.generate_activity_description(photo_context)
-                    photo.ai_generated_description = description
+                    photo.ai_description = description
                     result["description"] = description
-
-                    # Step 8: Create Activity record
-                    activity = Activity(
-                        child_id=primary_child_id,
-                        daycare_id=photo.daycare_id,
-                        staff_id=uploader_id,
-                        activity_type=activity_type,
-                        activity_time=captured_time,
-                        duration_minutes=suggested_duration,
-                        notes=description,
-                        mood=mood
-                    )
-                    db.add(activity)
-                    db.flush()  # Get activity ID
-
-                    # Link photo to activity
-                    photo.activity_id = activity.id
-                    result["activity_created"] = True
-
-                    # Step 9: Update photo metadata
-                    photo_metadata = photo.photo_metadata or {}
-                    photo_metadata.update({
-                        "processed_at": datetime.utcnow().isoformat(),
-                        "ai_analysis": analysis_result,
-                        "children_count": len(identified_child_ids),
-                        "processing_version": "1.0"
-                    })
-                    photo.photo_metadata = photo_metadata
-
                 else:
-                    # No children identified - still generate generic description
+                    # No persons identified - still generate generic description
                     photo_context = {
                         "child_name": "the children",
-                        "time_of_day": photo.captured_at.strftime("%H:%M") if photo.captured_at else "",
-                        "location": photo.location,
+                        "time_of_day": datetime.now().strftime("%H:%M"),
+                        "location": None,
                         "detected_objects": []
                     }
                     description = self.llm_service.generate_activity_description(photo_context)
-                    photo.ai_generated_description = description
+                    photo.ai_description = description
                     result["description"] = description
 
                 # Commit all changes
@@ -188,20 +130,14 @@ class PhotoProcessor:
             uploader_id: User ID of uploader
 
         Returns:
-            Batch processing summary:
-                - total: int
-                - successful: int
-                - failed: int
-                - faces_detected: int
-                - children_identified: set
-                - results: List of individual results
+            Batch processing summary
         """
         summary = {
             "total": len(photo_ids),
             "successful": 0,
             "failed": 0,
             "faces_detected": 0,
-            "children_identified": set(),
+            "persons_identified": set(),
             "results": []
         }
 
@@ -220,105 +156,14 @@ class PhotoProcessor:
             if result["success"]:
                 summary["successful"] += 1
                 summary["faces_detected"] += result["faces_detected"]
-                summary["children_identified"].update(result["children_identified"])
+                summary["persons_identified"].update(result["persons_identified"])
             else:
                 summary["failed"] += 1
 
         # Convert set to list for JSON serialization
-        summary["children_identified"] = list(summary["children_identified"])
+        summary["persons_identified"] = list(summary["persons_identified"])
 
         return summary
-
-    def reprocess_photo(self, photo_id: str) -> Dict[str, any]:
-        """
-        Reprocess an existing photo (useful after adding new children or improving AI)
-
-        Args:
-            photo_id: Photo ID to reprocess
-
-        Returns:
-            Processing result
-        """
-        try:
-            with get_db() as db:
-                photo = db.query(Photo).filter(Photo.id == photo_id).first()
-                if not photo:
-                    return {"success": False, "error": "Photo not found"}
-
-                # Note: In production, you'd fetch the image from storage
-                # For now, this is a placeholder
-                return {
-                    "success": False,
-                    "error": "Reprocessing requires image data from storage (not implemented in this version)"
-                }
-
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    def get_processing_stats(self, daycare_id: str, days: int = 7) -> Dict[str, any]:
-        """
-        Get photo processing statistics for a daycare
-
-        Args:
-            daycare_id: Daycare ID
-            days: Number of days to look back
-
-        Returns:
-            Statistics dictionary
-        """
-        try:
-            with get_db() as db:
-                from datetime import timedelta
-
-                cutoff_date = datetime.utcnow() - timedelta(days=days)
-
-                # Total photos uploaded
-                total_photos = db.query(Photo).filter(
-                    Photo.daycare_id == daycare_id,
-                    Photo.uploaded_at >= cutoff_date
-                ).count()
-
-                # Photos with face recognition complete
-                processed_photos = db.query(Photo).filter(
-                    Photo.daycare_id == daycare_id,
-                    Photo.uploaded_at >= cutoff_date,
-                    Photo.face_recognition_complete == True
-                ).count()
-
-                # Auto-tagged photos
-                auto_tagged = db.query(Photo).filter(
-                    Photo.daycare_id == daycare_id,
-                    Photo.uploaded_at >= cutoff_date,
-                    Photo.auto_tagged == True
-                ).count()
-
-                # Photos with AI descriptions
-                ai_described = db.query(Photo).filter(
-                    Photo.daycare_id == daycare_id,
-                    Photo.uploaded_at >= cutoff_date,
-                    Photo.ai_generated_description.isnot(None)
-                ).count()
-
-                # Activities auto-created
-                auto_activities = db.query(Activity).filter(
-                    Activity.daycare_id == daycare_id,
-                    Activity.created_at >= cutoff_date,
-                    Activity.notes.like("%")  # Has AI-generated notes
-                ).count()
-
-                return {
-                    "total_photos": total_photos,
-                    "processed_photos": processed_photos,
-                    "auto_tagged_photos": auto_tagged,
-                    "ai_described_photos": ai_described,
-                    "auto_created_activities": auto_activities,
-                    "processing_rate": round(processed_photos / total_photos * 100, 1) if total_photos > 0 else 0,
-                    "auto_tag_rate": round(auto_tagged / total_photos * 100, 1) if total_photos > 0 else 0
-                }
-
-        except Exception as e:
-            print(f"Error getting processing stats: {e}")
-            return {}
 
 
 # Singleton instance

@@ -1,8 +1,8 @@
 """Database package"""
-from .models import Base, Daycare, User, Child, Activity, Photo, Notification, Subscription
+from .models import Base, Organization, User, Person, Photo
 from .connection import get_db, init_db
 
 __all__ = [
-    'Base', 'Daycare', 'User', 'Child', 'Activity', 'Photo',
-    'Notification', 'Subscription', 'get_db', 'init_db'
+    'Base', 'Organization', 'User', 'Person', 'Photo',
+    'get_db', 'init_db'
 ]

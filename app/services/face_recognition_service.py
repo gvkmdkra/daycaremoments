@@ -1,12 +1,22 @@
-"""Face Recognition Service - Identify children in photos"""
+"""Face Recognition Service - Identify persons in photos"""
 
-import face_recognition
 import numpy as np
 from PIL import Image
 import io
 from typing import List, Dict, Optional
 from app.database import get_db
-from app.database.models import Child, Photo
+from app.database.models import Person, Photo
+
+# Try to import face_recognition, fallback to mock if not available
+try:
+    import face_recognition
+    FACE_RECOGNITION_AVAILABLE = True
+except ImportError:
+    FACE_RECOGNITION_AVAILABLE = False
+    print("WARNING: face_recognition not installed. Using mock implementation.")
+    print("To enable real face recognition:")
+    print("  1. Install CMake from cmake.org")
+    print("  2. pip install face_recognition")
 
 
 class FaceRecognitionService:
@@ -15,6 +25,7 @@ class FaceRecognitionService:
     def __init__(self):
         self.tolerance = 0.6  # Lower = more strict
         self.model = "hog"  # Can be 'hog' or 'cnn' (cnn is more accurate but slower)
+        self.mock_mode = not FACE_RECOGNITION_AVAILABLE
 
     def encode_face(self, image_data: bytes) -> Optional[np.ndarray]:
         """
@@ -26,6 +37,10 @@ class FaceRecognitionService:
         Returns:
             Face encoding array or None if no face found
         """
+        if self.mock_mode:
+            # Mock implementation - return random encoding
+            return np.random.rand(128)
+
         try:
             # Load image
             image = face_recognition.load_image_file(io.BytesIO(image_data))
@@ -58,6 +73,10 @@ class FaceRecognitionService:
         Returns:
             List of face encodings
         """
+        if self.mock_mode:
+            # Mock implementation - return one random encoding
+            return [np.random.rand(128)]
+
         try:
             image = face_recognition.load_image_file(io.BytesIO(image_data))
             face_locations = face_recognition.face_locations(image, model=self.model)
@@ -95,35 +114,34 @@ class FaceRecognitionService:
             print(f"Face comparison error: {e}")
             return False
 
-    def identify_child(self, face_encoding: np.ndarray, daycare_id: str) -> Optional[str]:
+    def identify_person(self, face_encoding: np.ndarray, organization_id: str) -> Optional[str]:
         """
-        Identify which child matches the face encoding
+        Identify which person matches the face encoding
 
         Args:
             face_encoding: Face encoding to identify
-            daycare_id: Daycare ID to search within
+            organization_id: Organization ID to search within
 
         Returns:
-            Child ID if match found, None otherwise
+            Person ID if match found, None otherwise
         """
         try:
             with get_db() as db:
-                # Get all children with face encodings in this daycare
-                children = db.query(Child).filter(
-                    Child.daycare_id == daycare_id,
-                    Child.is_active == True
+                # Get all persons with face encodings in this organization
+                persons = db.query(Person).filter(
+                    Person.organization_id == organization_id
                 ).all()
 
                 best_match_id = None
                 best_match_distance = float('inf')
 
-                for child in children:
-                    # Check if child has face encodings (JSON list)
-                    if not child.face_encodings or len(child.face_encodings) == 0:
+                for person in persons:
+                    # Check if person has face encodings (JSON list)
+                    if not person.face_encodings or len(person.face_encodings) == 0:
                         continue
 
                     # Compare with each stored encoding
-                    for stored_encoding_list in child.face_encodings:
+                    for stored_encoding_list in person.face_encodings:
                         try:
                             known_encoding = np.array(stored_encoding_list, dtype=np.float64)
 
@@ -139,7 +157,7 @@ class FaceRecognitionService:
                                 distance = face_recognition.face_distance([known_encoding], face_encoding)[0]
                                 if distance < best_match_distance:
                                     best_match_distance = distance
-                                    best_match_id = child.id
+                                    best_match_id = person.id
 
                         except Exception as e:
                             print(f"Error comparing encoding: {e}")
@@ -148,40 +166,40 @@ class FaceRecognitionService:
                 return best_match_id
 
         except Exception as e:
-            print(f"Child identification error: {e}")
+            print(f"Person identification error: {e}")
             return None
 
-    def identify_children_in_photo(self, image_data: bytes, daycare_id: str) -> List[str]:
+    def identify_persons_in_photo(self, image_data: bytes, organization_id: str) -> List[str]:
         """
-        Identify all children in a photo
+        Identify all persons in a photo
 
         Args:
             image_data: Image bytes
-            daycare_id: Daycare ID
+            organization_id: Organization ID
 
         Returns:
-            List of child IDs found in photo
+            List of person IDs found in photo
         """
-        identified_children = []
+        identified_persons = []
 
         # Get all face encodings from photo
         face_encodings = self.encode_faces_multiple(image_data)
 
         # Try to identify each face
         for encoding in face_encodings:
-            child_id = self.identify_child(encoding, daycare_id)
-            if child_id and child_id not in identified_children:
-                identified_children.append(child_id)
+            person_id = self.identify_person(encoding, organization_id)
+            if person_id and person_id not in identified_persons:
+                identified_persons.append(person_id)
 
-        return identified_children
+        return identified_persons
 
-    def train_child(self, child_id: str, training_images: List[bytes]) -> Dict[str, any]:
+    def train_person(self, person_id: str, training_images: List[bytes]) -> Dict[str, any]:
         """
-        Train face recognition for a child using multiple training photos
+        Train face recognition for a person using multiple training photos (minimum 3 recommended)
 
         Args:
-            child_id: Child ID
-            training_images: List of image bytes containing child's face
+            person_id: Person ID
+            training_images: List of image bytes containing person's face
 
         Returns:
             Dictionary with success status and details
@@ -212,78 +230,26 @@ class FaceRecognitionService:
 
             # Store encodings in database
             with get_db() as db:
-                child = db.query(Child).filter(Child.id == child_id).first()
+                person = db.query(Person).filter(Person.id == person_id).first()
 
-                if child:
+                if person:
                     # Update face encodings (append to existing or create new)
-                    existing_encodings = child.face_encodings or []
-                    child.face_encodings = existing_encodings + all_encodings
-                    child.training_photo_count = len(child.face_encodings)
+                    existing_encodings = person.face_encodings or []
+                    person.face_encodings = existing_encodings + all_encodings
                     db.commit()
 
                     result["success"] = True
                     result["encodings_added"] = len(all_encodings)
-                    result["total_encodings"] = child.training_photo_count
+                    result["total_encodings"] = len(person.face_encodings)
                     return result
                 else:
-                    result["error"] = "Child not found"
+                    result["error"] = "Person not found"
                     return result
 
         except Exception as e:
             result["error"] = str(e)
             print(f"Face training error: {e}")
             return result
-
-    def register_child_face(self, child_id: str, image_data: bytes) -> bool:
-        """
-        Register a single child's face for future recognition (legacy method)
-
-        Args:
-            child_id: Child ID
-            image_data: Image bytes containing child's face
-
-        Returns:
-            True if successful
-        """
-        result = self.train_child(child_id, [image_data])
-        return result["success"]
-
-    def auto_tag_photo(self, photo_id: str) -> List[str]:
-        """
-        Automatically tag children in a photo
-
-        Args:
-            photo_id: Photo ID
-
-        Returns:
-            List of child IDs found in photo
-        """
-        try:
-            with get_db() as db:
-                photo = db.query(Photo).filter(Photo.id == photo_id).first()
-
-                if not photo:
-                    return []
-
-                # Download image (in production, this would fetch from storage)
-                # For now, we'll return empty as this requires actual image data
-                # image_data = download_from_storage(photo.url)
-
-                # Identify children
-                # child_ids = self.identify_children_in_photo(image_data, photo.daycare_id)
-
-                # Update photo with identified children
-                # if child_ids:
-                #     photo.child_id = child_ids[0]  # Main child
-                #     db.commit()
-
-                # return child_ids
-
-                return []
-
-        except Exception as e:
-            print(f"Auto-tagging error: {e}")
-            return []
 
     def get_face_locations(self, image_data: bytes) -> List[Dict[str, int]]:
         """
@@ -295,6 +261,10 @@ class FaceRecognitionService:
         Returns:
             List of face locations as dicts with top, right, bottom, left keys
         """
+        if self.mock_mode:
+            # Mock implementation - return one fake face location
+            return [{"top": 100, "right": 300, "bottom": 300, "left": 100}]
+
         try:
             image = face_recognition.load_image_file(io.BytesIO(image_data))
             locations = face_recognition.face_locations(image, model=self.model)

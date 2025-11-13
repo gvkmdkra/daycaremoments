@@ -74,3 +74,46 @@ docs/archive/
 tmp/
 temp/
 *.tmp
+nul
+
+# Test scripts
+test_*.py
+*_test.py
+debug_*.py
+verify_*.py
+check_*.py
+
+# Build artifacts
+daycaremoments_production/
+modules/
+appdatabasemodels.py
+
+# Documentation with secrets (keep only deployment docs)
+Build_intelligent_system.py
+CURSOR_CLAUDE_COMPLETE_PROMPT.md
+STARTUP_GUIDE.md
+COMPLETE_AUTONOMOUS_PROMPT.md
+ARCHITECTURE_DIAGRAMS.md
+AUTONOMOUS_BUILD_COMPLETE.md
+BUILD_COMPLETE_SUMMARY.md
+BUILD_STATUS.md
+COMPLETE_REDESIGN_SUMMARY.md
+FINAL_SUMMARY.md
+HOW_TO_USE_CURSOR_PROMPT.md
+HOW_TO_USE_THIS_PROMPT.md
+INDEX.md
+PACKAGE_SUMMARY.md
+PLAN.md
+QUICK_START.md
+START_HERE.md
+TECHNICAL_ARCHITECTURE.md
+TEST_RESULTS.md
+
+# Deployment scripts (manual use only)
+commit_and_push.bat
+push_to_github.ps1
+git_push.py
+start.bat
+start.sh
+install.sh
+
